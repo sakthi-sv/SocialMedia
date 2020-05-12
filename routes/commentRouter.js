@@ -1,11 +1,11 @@
 const router=require("express").Router();
 const jwt=require('jsonwebtoken')
-class Post{
-    constructor(postController){
-        this.controller=postController
+class Comment{
+    constructor(commentController){
+        this.controller=commentController
         this.init();
     }
-    authenticateToken=(req, res, next)=>{
+    authenticateAccessToken=(req, res, next)=>{
         const authHeader = req.headers['authorization']
         const token = authHeader && authHeader.split(' ')[1]
         
@@ -19,43 +19,44 @@ class Post{
         })
     }
     init(){
-        router.post('/create',this.authenticateToken,(req,res)=>{
-            this.controller.createPost(
+        router.post('/create',this.authenticateAccessToken,(req,res)=>{
+            this.controller.createComment(
                 req.body,
                 (code,result)=>{
                     res.status(code).send(result)
                 }
             )
         })
-        router.put('/delete',this.authenticateToken,(req,res)=>{
-            this.controller.deletePost(
+        router.put('/view',this.authenticateAccessToken,(req,res)=>{
+            this.controller.getComments(
                 req.body,
                 (code,result)=>{
                     res.status(code).send(result)
                 }
             )
         })
-        router.put('/update',this.authenticateToken,(req,res)=>{
-            this.controller.updatePost(
+        router.put('/update',this.authenticateAccessToken,(req,res)=>{
+            this.controller.updateComment(
                 req.body,
                 (code,result)=>{
                     res.status(code).send(result)
                 }
             )
         })
-        router.get('/view',this.authenticateToken,(req,res)=>{
-            this.controller.getPost(
+        router.put('/delete',this.authenticateAccessToken,(req,res)=>{
+            this.controller.deleteComments(
                 req.body,
                 (code,result)=>{
                     res.status(code).send(result)
                 }
             )
         })
+
     }
     getRouter(){
         return router;
     }
 }
 module.exports=controller =>{
-    return new Post(controller);
+    return new Comment(controller);
 };

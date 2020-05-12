@@ -1,7 +1,7 @@
 "use strict";
 module.exports = (sequelize, DataTypes) => {
-  const posts = sequelize.define(
-    "posts",
+  const comments = sequelize.define(
+    "comments",
     {
       id: {
         allowNull: false,
@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         type: DataTypes.INTEGER,
       },
-      content: {
+      comment: {
         allowNull: false,
         type: DataTypes.TEXT,
       },
@@ -20,13 +20,13 @@ module.exports = (sequelize, DataTypes) => {
     },
     {}
   );
-  posts.associate = function (models) {
+  comments.associate = function (models) {
     // associations can be defined here
-    posts.belongsTo(models.users);
-    posts.hasMany(models.comments, {
-      hooks:true,
+    comments.belongsTo(models.users);
+    comments.belongsTo(models.posts, {
+      foreignKeyConstraint: true,
       onDelete: "CASCADE",
     });
   };
-  return posts;
+  return comments;
 };

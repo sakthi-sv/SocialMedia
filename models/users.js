@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       type: DataTypes.STRING
     },
-    activeToken: {
+    refreshToken: {
       type: DataTypes.STRING(200)
     }
   }, {
@@ -23,7 +23,8 @@ module.exports = (sequelize, DataTypes) => {
   });
   users.associate = function(models) {
     // associations can be defined here
-    users.hasMany(models.posts)
+    users.hasMany(models.posts);
+    users.hasMany(models.comments);
   };
   return users;
 };

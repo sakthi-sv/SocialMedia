@@ -6,12 +6,13 @@ const jwt = require("jsonwebtoken");
 const User = require("../models").users;
 
 class UserController {
-  generateToken = (id) => jwt.sign({ id }, process.env.ACCESS_TOKEN_SECRET);
+  generateAccessToken = (id) =>
+    jwt.sign({ id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
 
-  updateUser = (id, activeToken) => {
+  updateUser = (id, refreshToken) => {
     return User.update(
       {
-        activeToken: activeToken,
+        refreshToken: refreshToken,
       },
       {
         where: {
@@ -20,16 +21,7 @@ class UserController {
       }
     );
   };
-  getId = async (activeToken) => {
-    let promise = await User.findOne({
-      attributes: ["id"],
-      where: {
-        activeToken,
-      },
-    });
 
-    return promise;
-  };
   async signOut(data, callBack) {
     await this.updateUser(data.id, null);
     callBack(204, "updated");
@@ -43,15 +35,34 @@ class UserController {
     }).then((result) => {
       if (result) {
         if (bcrypt.compare(data.password, result.password)) {
-          if (!result.activeToken) {
-            const activeToken = this.generateToken(result.id);
-            console.log(activeToken);
-            this.updateUser(result.id, activeToken);
-            callBack(201, { activeToken });
-          } else callBack(201, { activeToken: result.activeToken });
+          if (!result.refreshToken) {
+            const refreshToken = jwt.sign(
+              result.id,
+              process.env.REFRESH_TOKEN_SECRET
+            );
+            const accessToken = this.generateAccessToken(result.id);
+            console.log(accessToken, refreshToken);
+            this.updateUser(result.id, refreshToken);
+            callBack(201, {
+              accessToken: accessToken,
+              refreshToken: refreshToken,
+            });
+          } else {
+            const accessToken = this.generateAccessToken(result.id);
+            callBack(201, {
+              accessToken: accessToken,
+              refreshToken: result.refreshToken,
+            });
+          }
         }
       } else callBack(403, {});
     });
+  }
+  getToken(data, callBack) {
+    console.log(data);
+    let { id } = data;
+    const accessToken = this.generateAccessToken(data.id);
+    callBack(201, { accessToken: accessToken });
   }
   async signUp(data, callBack) {
     let { name, password } = data;
@@ -65,14 +76,22 @@ class UserController {
     }).then((result) => {
       if (result) callBack(409, result);
       else {
-        const userdetail = User.create({
+        User.create({
           name,
           password,
+        }).then((userdetail) => {
+          console.log(userdetail);
+          const accessToken = this.generateAccessToken(userdetail.id);
+          const refreshToken = jwt.sign(
+            { id: userdetail.id },
+            process.env.REFRESH_TOKEN_SECRET
+          );
+          this.updateUser(userdetail.id, refreshToken);
+          callBack(201, {
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+          });
         });
-        console.log(userdetail);
-        const activeToken = this.generateToken(userdetail.id);
-        this.updateUser(userdetail.id, activeToken);
-        callBack(201, { activeToken });
       }
     });
   }
